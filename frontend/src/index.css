@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .neon-border {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5), inset 0 0 10px rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.8);
+  }
+  .neon-border-red {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 10px rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.8);
+  }
+  .neon-border-yellow {
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.5), inset 0 0 10px rgba(234, 179, 8, 0.2);
+    border: 1px solid rgba(234, 179, 8, 0.8);
+  }
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+}

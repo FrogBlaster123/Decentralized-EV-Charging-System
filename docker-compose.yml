@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  node-a:
+    build: ./backend
+    container_name: node-a
+    ports:
+      - "8001:80"
+    environment:
+      - NODE_ID=A
+      - PEERS=http://node-b:80,http://node-c:80,http://node-d:80,http://node-e:80
+    networks:
+      - ev-network
+
+  node-b:
+    build: ./backend
+    container_name: node-b
+    ports:
+      - "8002:80"
+    environment:
+      - NODE_ID=B
+      - PEERS=http://node-a:80,http://node-c:80,http://node-d:80,http://node-e:80
+    networks:
+      - ev-network
+
+  node-c:
+    build: ./backend
+    container_name: node-c
+    ports:
+      - "8003:80"
+    environment:
+      - NODE_ID=C
+      - PEERS=http://node-a:80,http://node-b:80,http://node-d:80,http://node-e:80
+    networks:
+      - ev-network
+
+  node-d:
+    build: ./backend
+    container_name: node-d
+    ports:
+      - "8004:80"
+    environment:
+      - NODE_ID=D
+      - PEERS=http://node-a:80,http://node-b:80,http://node-c:80,http://node-e:80
+    networks:
+      - ev-network
+
+  node-e:
+    build: ./backend
+    container_name: node-e
+    ports:
+      - "8005:80"
+    environment:
+      - NODE_ID=E
+      - PEERS=http://node-a:80,http://node-b:80,http://node-c:80,http://node-d:80
+    networks:
+      - ev-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - ev-network
+    depends_on:
+      - node-a
+      - node-b
+      - node-c
+      - node-d
+      - node-e
+
+networks:
+  ev-network:
+    driver: bridge
