@@ -1,6 +1,6 @@
 import { useNodes, NodeData } from './hooks/useNodes';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, Play, AlertOctagon, RotateCcw, RefreshCw } from 'lucide-react';
+import { Activity, Zap, AlertOctagon, RotateCcw, RefreshCw } from 'lucide-react';
 import { NetworkGraph } from './components/NetworkGraph';
 
 function App() {
