@@ -54,29 +54,31 @@ function App() {
   const ALL_NODES = ['A', 'B', 'C', 'D', 'E'];
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6 font-sans">
-      <header className="mb-8 border-b border-gray-800 pb-4 flex justify-between items-center">
+    <div className="min-h-screen bg-gray-950 text-gray-100 p-4 sm:p-6 font-sans">
+      <header className="mb-6 border-b border-gray-800 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
             <Zap className="text-emerald-500" />
             Decentralized EV Charging System
           </h1>
-          <p className="text-gray-400 mt-2">Ricart–Agrawala Mutual Exclusion Simulation</p>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base">Ricart–Agrawala Mutual Exclusion Simulation</p>
         </div>
-        <button onClick={triggerReset} className="bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-700 px-4 py-2 rounded-md font-medium transition flex items-center gap-2">
+        <button onClick={triggerReset} className="bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-700 px-4 py-2 rounded-md font-medium transition flex items-center gap-2 shrink-0">
           <RefreshCw size={16} /> Reset Network
         </button>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
         {/* Nodes Panel */}
         <div className="lg:col-span-2 space-y-6">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex flex-col justify-center items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex flex-col">
                <h2 className="text-xl font-semibold w-full text-left mb-4 border-b border-gray-800 pb-2">Network Topology</h2>
-               <NetworkGraph nodes={nodes} messageEvents={messageEvents} removeMessageEvent={removeMessageEvent} />
+               <div className="flex-1 flex justify-center items-center">
+                 <NetworkGraph nodes={nodes} messageEvents={messageEvents} removeMessageEvent={removeMessageEvent} />
+               </div>
             </div>
 
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex flex-col gap-4">
@@ -151,7 +153,7 @@ function App() {
               Node Cluster Status
             </h2>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               <AnimatePresence>
                 {Object.values(nodes).map((node) => (
                   <NodeCard key={node.id} node={node} />
@@ -162,9 +164,9 @@ function App() {
         </div>
 
         {/* Logs Sidebar */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg h-[80vh] flex flex-col">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg lg:sticky lg:top-6 flex flex-col" style={{ maxHeight: 'calc(100vh - 3rem)' }}>
           <h2 className="text-xl font-semibold mb-4 border-b border-gray-800 pb-2">Real-time Logs</h2>
-          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar min-h-[300px]">
             <AnimatePresence initial={false}>
               {logs.map((log) => (
                 <motion.div
@@ -181,7 +183,7 @@ function App() {
                 </motion.div>
               ))}
               {logs.length === 0 && (
-                <div className="text-center text-gray-500 mt-10">No logs yet.</div>
+                <div className="text-center text-gray-500 mt-10">No logs yet. Use the controls to trigger actions.</div>
               )}
             </AnimatePresence>
           </div>
