@@ -115,18 +115,22 @@ class Node:
         await self.broadcast_ui_update()
 
     def get_peer_url(self, peer_id: str) -> str:
-        # Assuming peers are in the format "http://node-b:PORT"
-        # We can find the matching peer or parse from active_peers
         for peer in self.all_peers:
             if f"node-{peer_id.lower()}" in peer:
+                return peer
+            # Localhost port mapping support (A=8001, B=8002, etc.)
+            expected_port = str(8000 + ord(peer_id.upper()) - ord('A') + 1)
+            if peer.endswith(expected_port) or f":{expected_port}" in peer:
                 return peer
         return ""
 
     def get_peer_id_from_url(self, url: str) -> str:
-        # Simplistic parsing "http://node-b:8002" -> "B"
-        for p in ['a', 'b', 'c', 'd', 'e']:
-            if f"node-{p}" in url:
-                return p.upper()
+        for p in ['A', 'B', 'C', 'D', 'E']:
+            if f"node-{p.lower()}" in url:
+                return p
+            expected_port = str(8000 + ord(p) - ord('A') + 1)
+            if url.endswith(expected_port) or f":{expected_port}" in url:
+                return p
         return "UNKNOWN"
 
     async def request_cs(self):
