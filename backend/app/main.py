@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.node import (
     node_instance,
@@ -25,16 +25,22 @@ async def startup_event():
 
 @app.post("/api/request")
 async def handle_request(req: RequestMessage):
+    if node_instance.is_failed:
+        raise HTTPException(status_code=503, detail="Node is offline")
     await node_instance.receive_request(req)
     return {"status": "ok"}
 
 @app.post("/api/reply")
 async def handle_reply(rep: ReplyMessage):
+    if node_instance.is_failed:
+        raise HTTPException(status_code=503, detail="Node is offline")
     await node_instance.receive_reply(rep)
     return {"status": "ok"}
 
 @app.post("/api/recover")
 async def handle_recover(msg: RecoverMessage):
+    if node_instance.is_failed:
+        raise HTTPException(status_code=503, detail="Node is offline")
     await node_instance.receive_recover(msg)
     return {"status": "ok"}
 
