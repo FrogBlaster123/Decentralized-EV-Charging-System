@@ -1,4 +1,5 @@
 import asyncio
+from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.node import (
@@ -18,9 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class SlotPayload(BaseModel):
+    slot_id: str
+
 @app.on_event("startup")
 async def startup_event():
-    # Initial status broadcast
     asyncio.create_task(node_instance.broadcast_ui_update())
 
 @app.post("/api/request")
@@ -37,6 +40,13 @@ async def handle_reply(rep: ReplyMessage):
     await node_instance.receive_reply(rep)
     return {"status": "ok"}
 
+@app.post("/api/deny")
+async def handle_deny(rep: ReplyMessage):
+    if node_instance.is_failed:
+        raise HTTPException(status_code=503, detail="Node is offline")
+    await node_instance.receive_deny(rep)
+    return {"status": "ok"}
+
 @app.post("/api/recover")
 async def handle_recover(msg: RecoverMessage):
     if node_instance.is_failed:
@@ -44,10 +54,14 @@ async def handle_recover(msg: RecoverMessage):
     await node_instance.receive_recover(msg)
     return {"status": "ok"}
 
-# Internal endpoints for UI triggers
 @app.post("/api/trigger_booking")
-async def trigger_booking():
-    asyncio.create_task(node_instance.request_cs())
+async def trigger_booking(payload: SlotPayload):
+    asyncio.create_task(node_instance.request_cs(payload.slot_id))
+    return {"status": "ok"}
+
+@app.post("/api/trigger_release")
+async def trigger_release(payload: SlotPayload):
+    asyncio.create_task(node_instance.release_slot(payload.slot_id))
     return {"status": "ok"}
 
 @app.post("/api/trigger_fail")
@@ -72,7 +86,6 @@ async def websocket_endpoint(websocket: WebSocket):
     await node_instance.broadcast_ui_update()
     try:
         while True:
-            # Keep connection alive
-            data = await websocket.receive_text()
+            await websocket.receive_text()
     except WebSocketDisconnect:
         node_instance.ui_connections.remove(websocket)

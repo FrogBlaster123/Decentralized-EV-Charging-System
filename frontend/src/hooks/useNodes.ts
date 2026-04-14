@@ -2,13 +2,18 @@ import { useEffect, useState, useCallback } from 'react';
 
 export type NodeState = 'IDLE' | 'REQUESTING' | 'HELD' | 'FAILED';
 
+export interface SlotData {
+  state: NodeState;
+  deferred: string[];
+  replies_received: string[];
+}
+
 export interface NodeData {
   id: string;
   clock: number;
-  state: NodeState;
-  deferred: string[];
+  is_failed: boolean;
+  slots: Record<string, SlotData>;
   active_peers: string[];
-  replies_received: string[];
   port: number;
   connected: boolean;
 }
@@ -26,7 +31,14 @@ export interface MessageEvent {
   source: string;
   target: string;
   msg_type: string;
+  slot_id: string;
   timestamp: number;
+}
+
+export interface DeniedEvent {
+  id: string;
+  node_id: string;
+  slot_id: string;
 }
 
 const PORTS = {
@@ -37,17 +49,23 @@ const PORTS = {
   E: 8005,
 };
 
+export const TIME_SLOTS = ["10:00-12:00", "12:00-14:00", "14:00-16:00", "16:00-18:00", "18:00-20:00"];
+
 export function useNodes() {
-  const [nodes, setNodes] = useState<Record<string, NodeData>>({
-    A: { id: 'A', clock: 0, state: 'IDLE', deferred: [], active_peers: [], replies_received: [], port: 8001, connected: false },
-    B: { id: 'B', clock: 0, state: 'IDLE', deferred: [], active_peers: [], replies_received: [], port: 8002, connected: false },
-    C: { id: 'C', clock: 0, state: 'IDLE', deferred: [], active_peers: [], replies_received: [], port: 8003, connected: false },
-    D: { id: 'D', clock: 0, state: 'IDLE', deferred: [], active_peers: [], replies_received: [], port: 8004, connected: false },
-    E: { id: 'E', clock: 0, state: 'IDLE', deferred: [], active_peers: [], replies_received: [], port: 8005, connected: false },
+  const [nodes, setNodes] = useState<Record<string, NodeData>>(() => {
+    const initSlots = () => TIME_SLOTS.reduce((acc, slot) => ({...acc, [slot]: { state: 'IDLE', deferred: [], replies_received: [] }}), {});
+    return {
+      A: { id: 'A', clock: 0, is_failed: false, slots: initSlots(), active_peers: [], port: 8001, connected: false },
+      B: { id: 'B', clock: 0, is_failed: false, slots: initSlots(), active_peers: [], port: 8002, connected: false },
+      C: { id: 'C', clock: 0, is_failed: false, slots: initSlots(), active_peers: [], port: 8003, connected: false },
+      D: { id: 'D', clock: 0, is_failed: false, slots: initSlots(), active_peers: [], port: 8004, connected: false },
+      E: { id: 'E', clock: 0, is_failed: false, slots: initSlots(), active_peers: [], port: 8005, connected: false },
+    };
   });
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [messageEvents, setMessageEvents] = useState<MessageEvent[]>([]);
+  const [deniedEvents, setDeniedEvents] = useState<DeniedEvent[]>([]);
 
   useEffect(() => {
     const sockets: Record<string, WebSocket> = {};
@@ -69,10 +87,9 @@ export function useNodes() {
                 [nodeId]: {
                   ...prev[nodeId],
                   clock: data.clock,
-                  state: data.state,
-                  deferred: data.deferred,
+                  is_failed: data.is_failed,
+                  slots: data.slots,
                   active_peers: data.active_peers,
-                  replies_received: data.replies_received,
                 }
               }));
             } else if (data.type === 'LOG') {
@@ -94,7 +111,17 @@ export function useNodes() {
                    source: data.source,
                    target: data.target,
                    msg_type: data.msg_type,
+                   slot_id: data.slot_id,
                    timestamp: Date.now()
+                 }
+               ]);
+            } else if (data.type === 'BOOKING_DENIED') {
+               setDeniedEvents(prev => [
+                 ...prev,
+                 {
+                   id: Math.random().toString(36).substr(2, 9),
+                   node_id: data.node_id,
+                   slot_id: data.slot_id
                  }
                ]);
             }
@@ -119,9 +146,23 @@ export function useNodes() {
     };
   }, []);
 
-  const triggerBooking = useCallback(async (nodeId: string) => {
+  const triggerBooking = useCallback(async (nodeId: string, slotId: string) => {
     try {
-      await fetch(`http://localhost:${PORTS[nodeId as keyof typeof PORTS]}/api/trigger_booking`, { method: 'POST' });
+      await fetch(`http://localhost:${PORTS[nodeId as keyof typeof PORTS]}/api/trigger_booking`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot_id: slotId })
+      });
+    } catch (e) {}
+  }, []);
+
+  const triggerRelease = useCallback(async (nodeId: string, slotId: string) => {
+    try {
+      await fetch(`http://localhost:${PORTS[nodeId as keyof typeof PORTS]}/api/trigger_release`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot_id: slotId })
+      });
     } catch (e) {}
   }, []);
 
@@ -152,5 +193,9 @@ export function useNodes() {
     setMessageEvents(prev => prev.filter(m => m.id !== id));
   }, []);
 
-  return { nodes, logs, messageEvents, triggerBooking, triggerFail, triggerRecover, triggerReset, removeMessageEvent };
+  const removeDeniedEvent = useCallback((id: string) => {
+    setDeniedEvents(prev => prev.filter(m => m.id !== id));
+  }, []);
+
+  return { nodes, logs, messageEvents, deniedEvents, triggerBooking, triggerRelease, triggerFail, triggerRecover, triggerReset, removeMessageEvent, removeDeniedEvent };
 }
